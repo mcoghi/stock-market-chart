@@ -4,7 +4,7 @@
   "//3": "updating this file will download and update your packages",
 
   "name": "mhl-stockmarket",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "fiddling with Yahoo-Finance",
   "main": "server.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "node": "8.x"
   },
   "repository": {
-    "url": "https://glitch.com/edit/#!/welcome-project"
+    "url": "https://github.com/mcoghi/stock-market-chart"
   },
   "license": "MIT",
   "keywords": [
