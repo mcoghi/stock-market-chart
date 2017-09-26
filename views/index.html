@@ -1,0 +1,79 @@
+<!-- This is a static file -->
+<!-- served from your routes in server.js -->
+
+<!-- You might want to try something fancier: -->
+<!-- html/nunjucks docs: https://mozilla.github.io/nunjucks/ -->
+<!-- pug: https://pugjs.org/ -->
+<!-- haml: http://haml.info/ -->
+<!-- hbs(handlebars): http://handlebarsjs.com/ -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Stock-Market chart</title>
+    <meta name="description" content="fiddling with Yahoo-Finance">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" 
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" 
+          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" 
+          crossorigin="anonymous">
+  </head>
+  <body>
+    <header>
+      <div class="title-box container">
+      <h1 class="text-center">
+        Stock-Market Chart
+      </h1>
+      <h5>
+        Showing percentage variation since the begginning of the year
+      </h5>
+      <button class="value btn">
+        Show Value
+      </button>
+      <button class="percent hidden btn">
+        Show Percentage
+      </button>             
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <div class="row">
+          <div class="col col-12">
+            <form class="add-index input-group">
+              <input type="text" placeholder="search new stock (write valid symbol)" maxlength="100" class="in-symbol form-control" required>
+                <span class="input-group-btn"><button type="submit" class="btn">
+                  Add
+              </button></span>
+            </form>   
+            <svg class="chart"></svg>    
+
+            <div class="index-list row"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      by Michelino
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-2.2.1.min.js"
+            integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" 
+            integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" 
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" 
+            integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" 
+            crossorigin="anonymous"></script>
+    <script src="/client.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3-time.v1.min.js"></script>
+    <script src="https://d3js.org/d3-time-format.v2.min.js"></script>
+
+  </body>
+</html>
