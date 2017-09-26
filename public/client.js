@@ -343,11 +343,11 @@ function lineChart(data){
   convertData_2(data, function(data_2, stocks){
 
     // create reactive elements
-    var react = chart.selectAll(".vertLine")
+    var react = chart.selectAll(".vert-line")
                 .data(data_2)
                 .enter()
                 .append('g')
-                .attr("class", "vertLine")
+                .attr("class", "vert-line")
                 .attr("transform", function(d,i){
                   return "translate(" 
                   + (padding.left + x(d[stocks[0]].date))
@@ -356,10 +356,79 @@ function lineChart(data){
                   + ")";
                 });
     
+    // attach the grey line that covers the whole graph vertically
     react.append('rect')
           .attr("width", 1)
           .attr("height", height - padding.top - padding.bottom)
-          .attr("transform", "translate(0," + padding.top + ")")
+          .attr("transform", "translate(0," + padding.top + ")")          
+          .on('mouseenter', function(d){
+            // hide other tooltip squares and circles
+            d3.selectAll('.vert-line').style("opacity", "0");
+      
+            // display current tooltip and circles
+            d3.select(this.parentNode).style("opacity", "0.8");
+            
+          })
+    
+    var tooltipHeight = 12 * stocks.length;
+    var tooltipWidth = 100;    
+    var tooltip = react
+                  .append('g')
+                  .attr("class", "my-tooltip")
+                  .attr("transform", "translate(-" + tooltipWidth/2 + "," + (padding.top - 10 * (stocks.length-1)) + ")");
+
+    tooltip.append('rect')
+      .attr("width", tooltipWidth)
+      .attr("height", tooltipHeight)
+      .style("fill", "lightgrey")
+      .attr("transform", "translate(0," + 0 + ")")
+    
+    // attach the small triangle that appears under the tooltip
+    tooltip.append('polygon')
+          .attr("points", function(d){
+            var lower = tooltipWidth/2 + "," + (tooltipHeight + 10);
+            var upperRight = (tooltipWidth/2 + 5) + "," + tooltipHeight;
+            var upperLeft = (tooltipWidth/2 - 5) + "," + tooltipHeight;
+            
+            return lower + " " + " " + upperRight + " " + upperLeft;
+          }).style("fill", "lightgrey")
+    
+    // creating the keys of the tooltip
+    var keyDim = 10;
+    
+    stocks.map(function(stock, i){
+      tooltip.append('rect')
+        .attr("width", keyDim)
+        .attr("height", keyDim)
+        .style("fill", z(stock))
+        .attr("transform", "translate(1," + (2 + 11 * i) + ")");
+    });
+    
+    // creating the text of the tooltip
+    
+    // date
+    tooltip.append('text')
+      .attr("y", - 1)
+      .attr("dx", '.50em')
+      .text(function(d){ return d[stocks[0]].date.toDateString(); });
+    
+    // data
+    stocks.map(function(stock, i){
+      tooltip.append('text').attr('x', 12).attr("y", 11 * (i+1))
+        .text(function(d){
+          var text = stock + ": " + d[stock][displayType].toFixed(2);
+        
+          // if the data is in percentage, add the percentage symbol
+          if (displayType == 'closurePercent'){
+            text += "%"
+          }               
+          
+          return text
+        })
+    })
+
+    
+          /*
           .on('mouseenter', function(d){
       
             // hide other tooltip squares and circles
@@ -411,7 +480,7 @@ function lineChart(data){
               left : x
             })
           })   
-    
+    */
     // create the small circles on selected datapoints
     stocks.map(function(stock){
       

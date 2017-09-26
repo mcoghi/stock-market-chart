@@ -175,7 +175,7 @@ wss.on('connection', function connection(ws, req) {
     
     // respond to ping requests with pong
     if (msg.query == 'ping'){
- 
+
       ws.send(JSON.stringify({
         type : 'pong',
         body : 'pong',
