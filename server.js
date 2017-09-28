@@ -33,8 +33,8 @@ app.get("/data", function(req, res){
   
   console.log(today)
   yahooFinance.historical({
-  symbols: ['GOOG', 'AAPL', 'FB'],
-  from: '2017-01-01',
+  symbols: ['^GDAXI'],
+  from: '2017-06-05',
   to: today,
   // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only) 
   }, function (err, quotes) {
@@ -85,6 +85,15 @@ wss.on('connection', function connection(ws, req) {
       
       //if a get request is received retrieve the list of indices and send it to the client
       db.getIndices({}, function(data){
+
+        // if the database is empty signal the client and don't search on Yahoo
+        if (data.length <= 0 ){
+          ws.send(JSON.stringify({
+            type: 'error',
+            body: 'database empty'
+          }))
+          return null
+        }
         
         yahooFinance.historical({
         symbols: data.map(function(val){ return val.index }),
