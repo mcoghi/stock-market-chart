@@ -5,13 +5,10 @@
 // add other scripts at the bottom of index.html
 var displayType = 'closurePercent';
 
-// keep track of the advancment of the drawing
-var requestRunning = false; // if true the drowing is ongoing
-
 $(function() {
   
   //store the data on client side, to avoid getting them after every request
-  var wholeData;
+  var wholeData = {};
   
   var socket = new WebSocket("wss://mhl-stockmarket.glitch.me/");
   
@@ -47,7 +44,6 @@ $(function() {
       // store the data
       wholeData = msg.body;
       
-      requestRunning = true;
       // upgrade the graph
       convertData(wholeData, lineChart);
       
@@ -62,13 +58,13 @@ $(function() {
     
     // if the server sends a single data, add it to the data and print all over again
     if (msg.type == 'data-single'){
+    
       
       // store the data
       var newSymbol = Object.keys(msg.body)
       wholeData[newSymbol] = msg.body[newSymbol];
       
       // update the graph
-      requestRunning = true;
       convertData(wholeData, lineChart);   
       
       // activate the X buttons
@@ -86,7 +82,6 @@ $(function() {
       subSetKeys(wholeData, msg.body, function(data){
         
         // update the graph
-        requestRunning = true;
         convertData(data, lineChart);
 
         // activate the X buttons
@@ -101,12 +96,7 @@ $(function() {
     // change from percentage to value
     $('.value').on("click", function(e){
       
-      // add this to prevent multiple clicks
-      if (requestRunning){
-        console.log('request is running')
-        return;
-      }
-      requestRunning = true;
+      e.stopImmediatePropagation()
 
       // change the diplay type
       displayType = 'closure';
@@ -130,13 +120,6 @@ $(function() {
     
     // chang from value to percentage
     $('.percent').on("click", function(e){
-
-      // add this to prevent multiple clicks
-      if (requestRunning){
-        console.log('request is running')
-        return;
-      }
-      requestRunning = true;
 
       // change the diplay type
       displayType = 'closurePercent';
@@ -256,8 +239,7 @@ $(function() {
 // DRAW THE CHART ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////
 
-function lineChart(data){
-  
+function lineChart(error, data){
   
   //-- clean up --//
   
@@ -270,6 +252,9 @@ function lineChart(data){
   // remove previously written symbols
   $("div").remove('.symbol');
   
+  //-- handle error if database is empty --//
+  if (error) throw error;
+  
   //-------------//
   
   var height = 500
@@ -280,16 +265,17 @@ function lineChart(data){
                 bottom: 50,
                 left: 50
                 }
-    
+  
+  // define the cahrt
   var chart = d3.select('.chart')
             .attr('height', height)
             .attr('width', width);
   
-
+  
   var dateRange = d3.extent(data[0].values, function(val){ return val.date; }) //the date range is supposed to be the same for every index
     , minY = d3.min(data, function(d){ return d3.min(d.values, function(val){ return val[displayType]; }); })
     , maxY = d3.max(data, function(d){ return d3.max(d.values, function(val){ return val[displayType]; }); })
-    , valueRange = [minY - 0.1 * (maxY - minY), maxY + 0.1 * (maxY - minY)];
+    , valueRange = [minY - 0.1 * (maxY - minY), maxY + 0.1 * (maxY - minY)]; // let the graph be a bit highter (20%) than the actual y range
 
   // set the scales
   var x = d3.scaleTime()
@@ -301,10 +287,12 @@ function lineChart(data){
     , z = d3.scaleOrdinal(d3.schemeCategory10)
             .domain(data.map(d => d.index));
   
+  // init the line graph
   var line = d3.line()
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d[displayType]); });
   
+  // drow the line representing each stock (aka index)
   var index = chart
     .selectAll(".index")
     .data(data)
@@ -318,14 +306,14 @@ function lineChart(data){
       .style("stroke", function(d) { return z(d.index); })
       .attr("transform", "translate(" + padding.left + "," + padding.top + ")")
   
-  //init axis
+  // init axis
   var xAxis = d3.axisBottom()
                 .scale(x)
     , yAxis = d3.axisLeft()
                 .scale(y)
                 .tickSize((- width + padding.left + padding.right))
       
-  //draw axis
+  // draw axis
   chart.append("g")
       .attr("transform", "translate(" + padding.left + "," + (height - padding.bottom) + ")")
       .attr("class", "axis xAxis")
@@ -335,11 +323,10 @@ function lineChart(data){
       .attr("transform", "translate(" + padding.left + "," + padding.top + ")")
       .attr("class", "axis yAxis")
       .call(yAxis);
-  
-  
+   
   // create pop up lines
-  // first slightly modify the shape of the data
   
+  // first slightly modify the shape of the data
   convertData_2(data, function(data_2, stocks){
 
     // create reactive elements
@@ -370,13 +357,15 @@ function lineChart(data){
             
           })
     
-    var tooltipHeight = 12 * stocks.length;
-    var tooltipWidth = 100;    
-    var tooltip = react
+    // init tooltip
+    var tooltipHeight = 12 * stocks.length
+      , tooltipWidth = 80 + stocks.reduce(function(acc, stock){ return Math.max(acc, stock.length);}, 0) * 4
+      ,  tooltip = react
                   .append('g')
                   .attr("class", "my-tooltip")
                   .attr("transform", "translate(-" + tooltipWidth/2 + "," + (padding.top - 10 * (stocks.length-1)) + ")");
 
+    // tooltip background rectangle
     tooltip.append('rect')
       .attr("width", tooltipWidth)
       .attr("height", tooltipHeight)
@@ -427,60 +416,6 @@ function lineChart(data){
         })
     })
 
-    
-          /*
-          .on('mouseenter', function(d){
-      
-            // hide other tooltip squares and circles
-            d3.selectAll('.chart rect').style("opacity", "0");
-            d3.selectAll('.chart circle').style("opacity", "0");
-      
-            // display current tooltip and circles
-            d3.select(this).style("opacity", "1");
-            d3.select(this.parentNode).selectAll('.outer').style("opacity", "0.3");
-            d3.select(this.parentNode).selectAll('.inner').style("opacity", "1");
-            // position a label on current event
-            $('.my-tooltip').remove();
-            $('main').append('<div class="my-tooltip"></div>');
-            
-            // define the tooltip content
-            // start with date
-            d3.select('.my-tooltip')
-              .append('div')
-              .text(d[stocks[0]].date.toDateString())
-            
-            // add the data of every stock
-            stocks.map(function(stock){
-              d3.select('.my-tooltip').append('span')
-                .style('background-color', z(stock))
-                .text(stock)
-              
-              d3.select('.my-tooltip')
-                .append('span')
-                .text(function(){
-                  // add the data to the tooltip
-                  var res = ": " + d[stock][displayType].toFixed(2);
-                
-                  // if the data is in percentage, add the percentage symbol
-                  if (displayType == 'closurePercent'){
-                    res += "%"
-                  }             
-                
-                  return res;
-                
-                }).append('br')
-              
-            })
-    
-            var x = Math.round(d3.event.pageX) + "px";
-            var y = (Math.round(d3.event.pageY) + 10) + "px"; // 80 is the padding of the body
-          
-            $('.my-tooltip').css({
-              top : y,
-              left : x
-            })
-          })   
-    */
     // create the small circles on selected datapoints
     stocks.map(function(stock){
       
@@ -511,16 +446,12 @@ function lineChart(data){
           });
     })
     
-    // rewrite the list of symbols at the bottom of the graph
+    // rewrite the interactive list of symbols at the bottom of the graph
     stocks.map(function(stock){
       $('.index-list').append('<div class="symbol col col-6 text-center"'
                               + ' style = "color: ' + z(stock) + '"'
                               + '><b>' + stock + '</b><button class="remove btn">X</button></div>');
     })
-  
-    // signal that the drawing is finished
-    requestRunning = false;
-
     
   })// end call: convertData_2
   
@@ -542,22 +473,68 @@ function convertData(data, callBack){
   //          date: current day
   //          }
   //          ]
-  
+    
   var parseTime = d3.timeParse("%Y%m%d");
   
   var result = [];
   
+  // retrieve the list of stocks
   var indices = Object.keys(data);
+        
+  // if there are no stock, don't bother with the grapth
+  if (indices.length <= 0){
+    
+    console.log('no stocks')
+    
+    callBack('no stocks to print', null);
+    
+    return null;
+  }
+  // remove dates that are not common to every stock
+  
+  // init the intersection as the dates of the first stock
+  var intersection = data[indices[0]].map(function(value){
+    
+    // at the same time, filter out missing values or incomplete data
+    if (value.close){
+      return value.date;
+    }
 
+  })
+ 
+  intersection = indices.reduce(function(acc, stock){
+    // collect the dates of the present stock
+    var new_dates = data[stock].map(function(value){
+      
+      // at the same time, filter out missin values or incomplete data
+      if (value.close){
+        return value.date;
+      }
+    });
+    
+    // intersect the two dates sets
+    return acc.intersection(new_dates);    
+  }, intersection)
+
+  // compare the intersection with every stock
+  // remove the non common dates
+
+  indices.map(function(stock){
+    data[stock] = data[stock].filter(function(value){
+      return intersection.indexOf(value.date) >= 0;
+    })
+  })
+  
   result = indices.map(function(index){
     
+    // the oldest datum is the last one in the array
     var firstData =  data[index].last().close;
     
     return{
           index : index,
           values : data[index].map(function(d){
             return  {
-                    closurePercent: ((d.close - firstData)/ firstData) * 100, // percentage increase
+                    closurePercent: ((d.close - firstData)/ firstData) * 100, // percentage variation
                     closure : d.close, // closing value
                     date : parseTime(d.date.split('T')[0].replace(/-/g,'')) // date
                     }                
@@ -565,7 +542,7 @@ function convertData(data, callBack){
     }
   })
   
-  callBack(result)
+  callBack(null, result)
 
 } //end convertData
 
@@ -602,15 +579,6 @@ function convertData_2(data, callBack){
 
 }// end convertData_2
 
-function checkValues(data){
-  data.map(function(d, i){
-    if (!d.index || !d.value || !d.date){
-      console.log(i);
-    }
-  })
-
-}
-
 // add a method to select the last element of an array
 if (!Array.prototype.last){
     Array.prototype.last = function(){
@@ -618,3 +586,9 @@ if (!Array.prototype.last){
     };
 };
 
+// intersection of two vectors
+Array.prototype.intersection = function(vector){
+  return this.filter(function(value){ 
+    return vector.indexOf(value) >= 0;    
+  })
+};

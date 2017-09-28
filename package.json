@@ -4,7 +4,7 @@
   "//3": "updating this file will download and update your packages",
 
   "name": "mhl-stockmarket",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "fiddling with Yahoo-Finance",
   "main": "server.js",
   "scripts": {

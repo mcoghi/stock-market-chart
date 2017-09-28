@@ -10,6 +10,7 @@ var mongo = require("mongodb").MongoClient;
 
 // retrieve the indices
 function getIndices(query, callBack){
+  
    
   // connect to database
   mongo.connect(config.dbUrl, function(err, db){
